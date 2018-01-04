@@ -1,0 +1,9 @@
+name: ngdp
+version: 0.1.0
+
+authors:
+  - mdX7 <moardox@gmail.com>
+
+crystal: 0.23.1
+
+license: MIT
