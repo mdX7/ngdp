@@ -15,12 +15,18 @@ end
 class NGDP
   property region : String
   getter programCode : String
+  getter maxFails : Int32
 
-  def initialize(@region : String, @programCode : String)
+  def initialize(@region : String, @programCode : String, @maxFails : Int32)
     @port = 1119
   end
 
-  def request(baseUrl : String, path : String)
+  def initialize(@region : String, @programCode : String)
+    @port = 1119
+    @maxFails = 3
+  end
+
+  def request(baseUrl : String, path : String, fails : Int32)
     begin
       client = HTTP::Client.new(URI.parse(baseUrl))
       client.connect_timeout = 300
@@ -30,11 +36,18 @@ class NGDP
 
       response.body
     rescue ex
-      puts "NGDP::request: #{ex.message}"
+      puts "NGDP#request: #{ex.message}"
       puts "  Retrying in 30s.."
+      fails += 1
+      return "" if fails >= @maxFails
+
       sleep 30
-      request(baseUrl, path)
+      request(baseUrl, path, fails)
     end
+  end
+
+  def request(baseUrl : String, path : String)
+    request(baseUrl, path, 0)
   end
 
   # Contains urls to cdns for this specific program
@@ -95,6 +108,11 @@ class NGDP
   # parses data from NGDP contents to JSON for easier accessability
   # TODO: recode: either extend JSON or code own datastructure json a like
   def parse(contents : String)
+    if contents == ""
+      puts "NGDP#parse: there is no content."
+      return JSON.parse("{}")
+    end
+
     contentIO = IO::Memory.new(contents)
 
     isHeader = true
